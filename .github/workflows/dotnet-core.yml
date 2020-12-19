@@ -2,9 +2,9 @@ name: Claim epic games
 
 on:
   watch:
-    types: [started] # uncomment to manually activate it by starring your repo
+    types: started # uncomment to manually activate it by starring your repo
   schedule:
-    - cron: "0 11,23 * * *"
+    - cron: "23 10,22 * * *"
     
 jobs:
   build:
@@ -26,4 +26,6 @@ jobs:
         $Env:epicname="${{secrets.USERNAME}}"
         $Env:epicpass="${{secrets.PASS}}"
         $Env:captcha="${{secrets.CAPTCHA}}"
+        $Env:chatid="${{secrets.CHATID}}"
+        $Env:bottoken="${{secrets.BOTTOKEN}}"
         dotnet run --project claimer/claimer/claimer.csproj
