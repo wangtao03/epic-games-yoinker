@@ -37,13 +37,9 @@ namespace epic_claimer
             _chatId = Environment.GetEnvironmentVariable("chatid");
             _botToken = Environment.GetEnvironmentVariable("bottoken");
 
-            Console.WriteLine($"username: {string.IsNullOrEmpty(_username)}");
-            Console.WriteLine($"pass:     {string.IsNullOrEmpty(_password)}");
-            Console.WriteLine($"captcha:  {string.IsNullOrEmpty(_captcha)}");
-            Console.WriteLine($"chatid:  {string.IsNullOrEmpty(_chatId)}");
-            Console.WriteLine($"bottoken:  {string.IsNullOrEmpty(_botToken)}");
+            telegram = ValidateTelegram();
+            Console.WriteLine($"Telegram: {telegram}");
 
-            ValidateTelegram();
             if (ValidateArguments() == false)
             {
                 return;
@@ -75,27 +71,29 @@ namespace epic_claimer
                 ClaimGame(url);
             }
 
-            Console.WriteLine("process finished");
+            Console.WriteLine("Process finished");
         }
 
-        private static void ValidateTelegram()
+        private static bool ValidateTelegram()
         {
             if (string.IsNullOrEmpty(_chatId) || string.IsNullOrEmpty(_botToken))
             {
-                telegram = false;
+                return false;
             }
             else
             {
-                telegram = true;
+                var isChatID = int.TryParse(_chatId, out _);
+                var isToken = new Regex(@"\d{9,10}:[a-zA-Z0-9_-]{35}").IsMatch(_botToken);
+
+                return isChatID && isToken;
             }
-            Console.WriteLine($"Telegram: {telegram}");
         }
 
         private static bool ValidateArguments()
         {
             if (string.IsNullOrEmpty(_username) || string.IsNullOrEmpty(_password) || string.IsNullOrEmpty(_captcha))
             {
-                Console.WriteLine("missing arguments");
+                Console.WriteLine("Missing arguments");
 
                 return false;
             }
@@ -105,13 +103,13 @@ namespace epic_claimer
             }
             catch (FormatException)
             {
-                Console.WriteLine("email address is not valid");
+                Console.WriteLine("Email address is not valid");
 
                 return false;
             }
             if (new Regex("^https:\\/\\/accounts.hcaptcha.com\\/verify_email\\/[0-9a-z-]+$").IsMatch(_captcha) == false)
             {
-                Console.WriteLine("captcha url is not valid");
+                Console.WriteLine("Captcha url is not valid");
 
                 return false;
             }
@@ -128,7 +126,7 @@ namespace epic_claimer
 
             for (var i = 0; i < maxTries; i++)
             {
-                Console.Write($"{i + 1}/{maxTries} retrieving cookie : ");
+                Console.Write($"{i + 1}/{maxTries} Retrieving cookie: ");
 
                 //Other languages can be used
                 GetElement("//button[@data-cy=\"setAccessibilityCookie\"]").Click();
@@ -136,12 +134,12 @@ namespace epic_claimer
                 //Other languages can be used
                 if (GetElement("//span[@data-cy=\"fetchStatus\"]").Text.StartsWith("Cookie"))
                 {
-                    Console.WriteLine("success");
+                    Console.WriteLine("Success");
 
                     return true;
                 }
 
-                Console.WriteLine("failed");
+                Console.WriteLine("Failed");
             }
 
             return false;
@@ -167,36 +165,42 @@ namespace epic_claimer
 
         private static bool Login(string user, string pass)
         {
-            Console.Write("Logging in : ");
+            const int maxTries = 5;
+
             //force the use of en-US
             _driver.Navigate().GoToUrl("https://www.epicgames.com/id/login?lang=en-US");
-
             Thread.Sleep(10000);
-
-            AddEpicCookies();
 
             GetElement("//div[@aria-label=\"Sign in with Epic Games\"]").Click();
+            AddEpicCookies();
 
-            Thread.Sleep(5000);
-
-            GetElement("//input[@name=\"email\"]").SendKeys(user);
-            GetElement("//input[@name=\"password\"]").SendKeys(pass);
-
-            Thread.Sleep(5000);
-
-            GetElement("//span[text()=\"Log in now\"]").Click();
-            Thread.Sleep(10000);
-
-            // wait for this element to be displayed
-            if (_wait.Until(x => x.FindElement(By.Id("egLogo")).Displayed))
+            var loginUrl = _driver.Url;
+            for (var i = 0; i < maxTries; i++)
             {
-                Console.WriteLine("success");
+                Console.Write($"{i + 1}/{maxTries} Logging in: ");
+                Thread.Sleep(5000);
+                var nameField = GetElement("//input[@name=\"email\"]");
+                var passField = GetElement("//input[@name=\"password\"]");
 
-                return true;
+                nameField.Clear();
+                passField.Clear();
+
+                nameField.SendKeys(user);
+                passField.SendKeys(pass);
+                Thread.Sleep(5000);
+
+                GetElement("//span[text()=\"Log in now\"]").Click();
+
+                Thread.Sleep(10000);
+
+                if (_driver.Url != loginUrl)
+                {
+                    Console.WriteLine("Success");
+
+                    return true;
+                }
+                Console.WriteLine("Failed");
             }
-
-            Console.WriteLine("failed");
-
             return false;
         }
 
@@ -219,7 +223,7 @@ namespace epic_claimer
 
         private static void ClaimGame(string url)
         {
-            Console.WriteLine($"claiming {url}");
+            Console.WriteLine($"Claiming {url}");
 
             _driver.Navigate().GoToUrl(url);
 
@@ -229,8 +233,7 @@ namespace epic_claimer
 
             if (_driver.PageSource.Contains("Owned</span>"))
             {
-                Console.WriteLine($"already owned: {title}");
-
+                Console.WriteLine($"Already owned: {title}");
                 return;
             }
 
@@ -242,23 +245,22 @@ namespace epic_claimer
             Thread.Sleep(10000);
             // click the agree button
             GetElements("//button[@class=\"btn btn-primary\"]")[1].Click();
-
             Thread.Sleep(10000);
+
+            Console.WriteLine($"Claimed {title}");
 
             if (telegram)
             {
                 try
                 {
                     var bot = new TelegramBotClient(_botToken);
-                    bot.SendTextMessageAsync(new ChatId(int.Parse(_chatId)), $"Claimed {title}");
+                    bot.SendTextMessageAsync(new ChatId(int.Parse(_chatId)), $"{title}\r\n{url}").Wait();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Telegram ERROR: {ex.Message}");
                 }
             }
-
-            Console.WriteLine($"Claimed {title}");
         }
 
         private static List<IWebElement> GetElements(string xPath)
@@ -271,8 +273,7 @@ namespace epic_claimer
             }
             catch (Exception)
             {
-                //print pageSoure
-                //Console.WriteLine(_driver.PageSource.ToString());
+                Console.WriteLine($"Elements not found: {xPath}");
                 throw;
             }
         }
@@ -287,9 +288,8 @@ namespace epic_claimer
             }
             catch (Exception)
             {
-                //print pageSoure
-                //Console.WriteLine(_driver.PageSource.ToString());
-                throw;
+                Console.WriteLine($"Element not found: {xPath}");
+                return null;
             }
         }
     }
