@@ -4,7 +4,7 @@ on:
   watch:
     types: started # uncomment to manually activate it by starring your repo
   schedule:
-    - cron: "23 10,22 * * *"
+    - cron: "27 21,8 * * *"
     
 jobs:
   build:
