@@ -254,7 +254,7 @@ namespace epic_claimer
                 try
                 {
                     var bot = new TelegramBotClient(_botToken);
-                    bot.SendTextMessageAsync(new ChatId(int.Parse(_chatId)), $"{title}\r\n{url}").Wait();
+                    bot.SendTextMessageAsync(new ChatId(int.Parse(_chatId)), $"{title}\r\n{url}/home").Wait();
                 }
                 catch (Exception ex)
                 {
