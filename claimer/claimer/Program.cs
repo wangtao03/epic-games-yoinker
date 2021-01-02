@@ -28,6 +28,7 @@ namespace epic_claimer
         private static bool telegram = false;
         private static string _chatId;
         private static string _botToken;
+        private static string _pushplus;
 
         private static void Main(string[] args)
         {
@@ -36,6 +37,7 @@ namespace epic_claimer
             _captcha = Environment.GetEnvironmentVariable("captcha");
             _chatId = Environment.GetEnvironmentVariable("chatid");
             _botToken = Environment.GetEnvironmentVariable("bottoken");
+            _pushplus = Environment.GetEnvironmentVariable("pushplus");
 
             telegram = ValidateTelegram();
             Console.WriteLine($"Telegram: {telegram}");
@@ -261,6 +263,12 @@ namespace epic_claimer
                 {
                     Console.WriteLine($"Telegram ERROR: {ex.Message}");
                 }
+            }
+
+            if (!string.IsNullOrEmpty(_pushplus))
+            {
+                _driver.Navigate().GoToUrl($"http://pushplus.hxtrip.com/send?token={_pushplus}&title={title}&content={url}&template=html");
+                Thread.Sleep(10000);
             }
         }
 
