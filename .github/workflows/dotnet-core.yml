@@ -4,8 +4,8 @@ on:
   #watch:
   #  types: started
   schedule:
-    - cron: "27 21,8 * * *"
-    
+    #- cron: "27 21,8 * * *"
+    - cron: "27 21 * * *"
 jobs:
   build:
     runs-on: windows-latest
