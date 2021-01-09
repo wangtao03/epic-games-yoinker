@@ -1,8 +1,8 @@
 name: Claim epic games
 
 on:
-  #watch:
-  #  types: started
+  watch:
+    types: started
   schedule:
     #- cron: "27 21,8 * * *"
     - cron: "27 21 * * *"

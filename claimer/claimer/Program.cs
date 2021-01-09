@@ -120,7 +120,7 @@ namespace epic_claimer
 
         private static bool GetCookie(string url)
         {
-            const int maxTries = 5;
+            const int maxTries = 10;
 
             _driver.Navigate().GoToUrl(url);
 
@@ -167,7 +167,7 @@ namespace epic_claimer
 
         private static bool Login(string user, string pass)
         {
-            const int maxTries = 5;
+            const int maxTries = 10;
 
             //force the use of en-US
             _driver.Navigate().GoToUrl("https://www.epicgames.com/id/login?lang=en-US");
@@ -214,11 +214,7 @@ namespace epic_claimer
 
             Thread.Sleep(10000);
 
-            var freeGameSection = new Regex("<h1 class=\"css-.+?\">Free Games<\\/h1>(.+?)Sales and Specials").Match(_driver.PageSource);
-
-            var freeGameUrls = new Regex("href=\"(/store/en-US/product.+?)\">").Matches(freeGameSection.Groups[0].ToString());
-
-            var urls = freeGameUrls.ToList().Select(url => $"https://www.epicgames.com{url.Groups[1]}");
+            var urls = GetElements("//a[descendant::span[text()='Free Now']]").Select(element => element.GetAttribute("href")).ToList();
 
             return urls;
         }
@@ -239,17 +235,25 @@ namespace epic_claimer
                 return;
             }
 
-            // Click the get button.
-            GetElement("//button[@data-testid=\"purchase-cta-button\"]").Click();
-            Thread.Sleep(10000);
-            // Click place order button
-            GetElement("//button[@class=\"btn btn-primary\"]").Click();
-            Thread.Sleep(10000);
-            // click the agree button
-            GetElements("//button[@class=\"btn btn-primary\"]")[1].Click();
-            Thread.Sleep(10000);
+            try
+            {
+                // Click the get button.
+                GetElement("//button[@data-testid=\"purchase-cta-button\"]").Click();
+                Thread.Sleep(10000);
+                // Click place order button
+                GetElement("//button[@class=\"btn btn-primary\"]").Click();
+                Thread.Sleep(10000);
+                // click the agree button
+                GetElements("//button[@class=\"btn btn-primary\"]")[1].Click();
+                Thread.Sleep(10000);
 
-            Console.WriteLine($"Claimed {title}");
+                Console.WriteLine($"Claimed {title}");
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("failed");
+                throw;
+            }
 
             if (telegram)
             {
