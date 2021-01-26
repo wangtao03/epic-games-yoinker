@@ -189,7 +189,7 @@ namespace epic_claimer
 
                 nameField.SendKeys(user);
                 passField.SendKeys(pass);
-                Thread.Sleep(5000);
+                Thread.Sleep(15000);
 
                 GetElement("//span[text()=\"Log in now\"]").Click();
 
