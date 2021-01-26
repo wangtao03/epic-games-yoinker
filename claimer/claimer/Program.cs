@@ -189,12 +189,17 @@ namespace epic_claimer
 
                 nameField.SendKeys(user);
                 passField.SendKeys(pass);
-                Thread.Sleep(15000);
-
-                GetElement("//span[text()=\"Log in now\"]").Click();
-
                 Thread.Sleep(10000);
-
+                try
+                {
+                    GetElement("//span[text()=\"Log in now\"]").Click();
+                    Thread.Sleep(10000);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }                
+                
                 if (_driver.Url != loginUrl)
                 {
                     Console.WriteLine("Success");
